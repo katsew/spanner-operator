@@ -16,6 +16,7 @@ type SpannerManagerBuilder interface {
 	InstanceConfig(config config.InstanceConfig) SpannerManagerBuilder
 	ServiceAccountPath(path string) SpannerManagerBuilder
 	Build() SpannerManager
+	BuildMock() SpannerManager
 }
 
 type spannerManagerBuilder struct {
@@ -79,4 +80,8 @@ func (sb *spannerManagerBuilder) Build() SpannerManager {
 		instanceConfig: sb.instanceConfig,
 		client: client,
 	}
+}
+
+func (sb *spannerManagerBuilder) BuildMock() SpannerManager {
+	return &mockClient{}
 }
