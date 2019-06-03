@@ -1,29 +1,29 @@
-package manager
+package operator
 
 import (
 	"google.golang.org/genproto/googleapis/spanner/admin/instance/v1"
 	"fmt"
 	"context"
-	adminInstance "cloud.google.com/go/spanner/admin/instance/apiv1"
+	cli "cloud.google.com/go/spanner/admin/instance/apiv1"
 	"github.com/labstack/gommon/log"
 	"google.golang.org/genproto/protobuf/field_mask"
 )
 
-type SpannerManager interface {
+type SpannerOperator interface {
 	CreateInstance(name string) error
 	ScaleNode(num int32) error
 	DeleteInstance() error
 	UpdateLabels(labels map[string]string) error
 }
 
-type spannerManager struct {
+type spannerOperator struct {
 	projectId string
 	instanceId string
 	instanceConfig string
-	client *adminInstance.InstanceAdminClient
+	client *cli.InstanceAdminClient
 }
 
-func (sm *spannerManager) CreateInstance(name string) error {
+func (sm *spannerOperator) CreateInstance(name string) error {
 
 	ctx := context.Background()
 	instanceName := fmt.Sprintf("projects/%s/instances/%s", sm.projectId, sm.instanceId)
@@ -49,9 +49,20 @@ func (sm *spannerManager) CreateInstance(name string) error {
 	return err
 }
 
-func (sm *spannerManager) ScaleNode(num int32) error {
-
+func (sm *spannerOperator) updateInstance(req *instance.UpdateInstanceRequest) error {
 	ctx := context.Background()
+	op, err := sm.client.UpdateInstance(ctx, req)
+	if err != nil {
+		return err
+	}
+	if _, err = op.Wait(ctx); err == nil {
+		log.Print("Update instance done!")
+	}
+	return err
+}
+
+func (sm *spannerOperator) ScaleNode(num int32) error {
+
 	instanceName := fmt.Sprintf("projects/%s/instances/%s", sm.projectId, sm.instanceId)
 	instanceInfo := &instance.Instance{
 		Name: instanceName,
@@ -63,18 +74,15 @@ func (sm *spannerManager) ScaleNode(num int32) error {
 			Paths: []string{"node_count"},
 		},
 	}
-	op, err := sm.client.UpdateInstance(ctx, req)
+	err := sm.updateInstance(req)
 	if err != nil {
 		return err
 	}
-	if _, err = op.Wait(ctx); err == nil {
-		log.Printf("Scale to %d done!", num)
-	}
-	return err
-
+	log.Printf("Update node count to %d", num)
+	return nil
 }
 
-func (sm *spannerManager) DeleteInstance() error {
+func (sm *spannerOperator) DeleteInstance() error {
 	ctx := context.Background()
 	instanceName := fmt.Sprintf("projects/%s/instances/%s", sm.projectId, sm.instanceId)
 	err := sm.client.DeleteInstance(ctx, &instance.DeleteInstanceRequest{
@@ -83,8 +91,7 @@ func (sm *spannerManager) DeleteInstance() error {
 	return err
 }
 
-func (sm *spannerManager) UpdateLabels(labels map[string]string) error {
-	ctx := context.Background()
+func (sm *spannerOperator) UpdateLabels(labels map[string]string) error {
 	instanceName := fmt.Sprintf("projects/%s/instances/%s", sm.projectId, sm.instanceId)
 	instanceInfo := &instance.Instance{
 		Name: instanceName,
@@ -93,15 +100,13 @@ func (sm *spannerManager) UpdateLabels(labels map[string]string) error {
 	req := &instance.UpdateInstanceRequest{
 		Instance: instanceInfo,
 		FieldMask: &field_mask.FieldMask{
-			Paths: []string{"node_count"},
+			Paths: []string{"labels"},
 		},
 	}
-	op, err := sm.client.UpdateInstance(ctx, req)
+	err := sm.updateInstance(req)
 	if err != nil {
 		return err
 	}
-	if _, err = op.Wait(ctx); err == nil {
-		log.Printf("Update labels to %+v done!", labels)
-	}
-	return err
+	log.Printf("Update labels to %+v", labels)
+	return nil
 }

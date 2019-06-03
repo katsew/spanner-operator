@@ -1,13 +1,13 @@
 package gcloud
 
 import (
-	"os"
-	"fmt"
-	"io/ioutil"
 	"bufio"
-	"io"
-	"strings"
+	"fmt"
 	ic "github.com/katsew/spanner-operator/pkg/config/instance_config"
+	"io"
+	"io/ioutil"
+	"os"
+	"strings"
 )
 
 func GetDefaults() (string, string, error) {

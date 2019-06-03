@@ -1,4 +1,4 @@
-package manager
+package operator
 
 import (
 	"io/ioutil"
@@ -10,47 +10,47 @@ import (
 	config "github.com/katsew/spanner-operator/pkg/config/instance_config"
 )
 
-type SpannerManagerBuilder interface {
-	ProjectId(projectId string) SpannerManagerBuilder
-	InstanceId(instanceId string) SpannerManagerBuilder
-	InstanceConfig(config config.InstanceConfig) SpannerManagerBuilder
-	ServiceAccountPath(path string) SpannerManagerBuilder
-	Build() SpannerManager
-	BuildMock() SpannerManager
+type SpannerOperatorBuilder interface {
+	ProjectId(projectId string) SpannerOperatorBuilder
+	InstanceId(instanceId string) SpannerOperatorBuilder
+	InstanceConfig(config config.InstanceConfig) SpannerOperatorBuilder
+	ServiceAccountPath(path string) SpannerOperatorBuilder
+	Build() SpannerOperator
+	BuildMock() *spannerMockOperator
 }
 
-type spannerManagerBuilder struct {
+type spannerOperatorBuilder struct {
 	projectId string
 	instanceId string
 	instanceConfig string
 	serviceAccountPath string
 }
 
-func New() *spannerManagerBuilder {
-	return &spannerManagerBuilder{}
+func New() *spannerOperatorBuilder {
+	return &spannerOperatorBuilder{}
 }
 
-func (sb *spannerManagerBuilder) ProjectId(projectId string) SpannerManagerBuilder {
+func (sb *spannerOperatorBuilder) ProjectId(projectId string) SpannerOperatorBuilder {
 	sb.projectId = projectId
 	return sb
 }
 
-func (sb *spannerManagerBuilder) InstanceId(instanceId string) SpannerManagerBuilder {
+func (sb *spannerOperatorBuilder) InstanceId(instanceId string) SpannerOperatorBuilder {
 	sb.instanceId = instanceId
 	return sb
 }
 
-func (sb *spannerManagerBuilder) InstanceConfig(config config.InstanceConfig) SpannerManagerBuilder {
+func (sb *spannerOperatorBuilder) InstanceConfig(config config.InstanceConfig) SpannerOperatorBuilder {
 	sb.instanceConfig = config.String()
 	return sb
 }
 
-func (sb *spannerManagerBuilder) ServiceAccountPath(path string) SpannerManagerBuilder {
+func (sb *spannerOperatorBuilder) ServiceAccountPath(path string) SpannerOperatorBuilder {
 	sb.serviceAccountPath = path
 	return sb
 }
 
-func (sb *spannerManagerBuilder) Build() SpannerManager {
+func (sb *spannerOperatorBuilder) Build() SpannerOperator {
 
 	ctx := context.Background()
 	var client *spanner.InstanceAdminClient
@@ -74,7 +74,7 @@ func (sb *spannerManagerBuilder) Build() SpannerManager {
 		panic(err)
 	}
 
-	return &spannerManager{
+	return &spannerOperator{
 		projectId: sb.projectId,
 		instanceId: sb.instanceId,
 		instanceConfig: sb.instanceConfig,
@@ -82,6 +82,6 @@ func (sb *spannerManagerBuilder) Build() SpannerManager {
 	}
 }
 
-func (sb *spannerManagerBuilder) BuildMock() SpannerManager {
-	return &mockClient{}
+func (sb *spannerOperatorBuilder) BuildMock() *spannerMockOperator {
+	return &spannerMockOperator{}
 }

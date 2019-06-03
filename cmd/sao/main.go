@@ -1,13 +1,13 @@
 package main
 
 import (
-	"github.com/katsew/spanner-operator/pkg/manager"
 	ic "github.com/katsew/spanner-operator/pkg/config/instance_config"
-	"github.com/spf13/cobra"
 	"github.com/katsew/spanner-operator/pkg/helper/gcloud"
+	"github.com/katsew/spanner-operator/pkg/operator"
+	"github.com/spf13/cobra"
 )
 
-var SaoClient manager.SpannerManager
+var SaoClient operator.SpannerOperator
 var projectId string
 var instanceId string
 var instanceConfig string
@@ -18,7 +18,7 @@ func main() {
 		Use: "sao",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 
-			builder := manager.New()
+			builder := operator.New()
 
 			if projectId != "" {
 				builder.ProjectId(projectId)
