@@ -1,11 +1,11 @@
 package operator
 
 import (
-	"google.golang.org/genproto/googleapis/spanner/admin/instance/v1"
-	"fmt"
-	"context"
 	cli "cloud.google.com/go/spanner/admin/instance/apiv1"
+	"context"
+	"fmt"
 	"github.com/labstack/gommon/log"
+	"google.golang.org/genproto/googleapis/spanner/admin/instance/v1"
 	"google.golang.org/genproto/protobuf/field_mask"
 )
 

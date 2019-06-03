@@ -1,11 +1,11 @@
 package operator
 
 import (
-	"io/ioutil"
+	spanner "cloud.google.com/go/spanner/admin/instance/apiv1"
+	"context"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
-	"context"
-	spanner "cloud.google.com/go/spanner/admin/instance/apiv1"
+	"io/ioutil"
 
 	config "github.com/katsew/spanner-operator/pkg/config/instance_config"
 )
