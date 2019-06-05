@@ -1,24 +1,24 @@
 package main
 
 import (
-	ic "github.com/katsew/spanner-operator/pkg/config/instance_config"
 	"github.com/katsew/spanner-operator/pkg/helper/gcloud"
-	"github.com/katsew/spanner-operator/pkg/operator"
+	"github.com/katsew/spanner-operator/pkg/operator/instance"
 	"github.com/spf13/cobra"
 )
 
-var SaoClient operator.SpannerOperator
+var instanceOperator instance.Operator
+var useMock bool
 var projectId string
 var instanceId string
 var instanceConfig string
 var serviceAccountPath string
 
 func main() {
-	var sao = &cobra.Command{
-		Use: "sao",
+	var io = &cobra.Command{
+		Use: "io",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 
-			builder := operator.New()
+			builder := instance.NewBuilder()
 
 			if projectId != "" {
 				builder.ProjectId(projectId)
@@ -26,34 +26,35 @@ func main() {
 				panic("No projectId provided")
 			}
 
-			if instanceId != "" {
-				builder.InstanceId(instanceId)
-			}  else {
+			if instanceId == "" {
 				panic("No instanceId provided")
 			}
 
-			if instanceConfig != "" {
-				builder.InstanceConfig(ic.FindByName(instanceConfig))
+			if instanceConfig == "" {
+				panic("No instanceConfig provided")
 			}
 
 			if serviceAccountPath != "" {
 				builder.ServiceAccountPath(serviceAccountPath)
 			}
 
-			SaoClient = builder.Build()
+			if useMock {
+				instanceOperator = builder.BuildMock("/tmp/spanner-instance-operator")
+			} else {
+				instanceOperator = builder.Build()
+			}
 		},
 	}
-	pid, icfg, err := gcloud.GetDefaults()
+	pid, _, err := gcloud.GetDefaults()
 	if err != nil {
 		panic(err)
 	}
-	sao.PersistentFlags().StringVarP(&projectId, "projectId", "p", pid, "GCP project ID")
-	sao.PersistentFlags().StringVarP(&instanceId, "instanceId", "i", "", "Cloud Spanner instance ID")
-	sao.PersistentFlags().StringVarP(&instanceConfig, "instanceConfig", "c", icfg, "Cloud Spanner instance config")
-	sao.PersistentFlags().StringVarP(&serviceAccountPath, "serviceAccountPath", "s", "", "Path to GCP ServiceAccount")
-	sao.AddCommand(&instanceCommand)
+	io.PersistentFlags().BoolVar(&useMock, "useMock", false, "Use mock client")
+	io.PersistentFlags().StringVarP(&projectId, "projectId", "p", pid, "GCP project ID")
+	io.PersistentFlags().StringVarP(&serviceAccountPath, "serviceAccountPath", "s", "", "Path to GCP ServiceAccount")
+	io.AddCommand(&instanceCommand)
 
-	if err := sao.Execute(); err != nil {
+	if err := io.Execute(); err != nil {
 		panic(err)
 	}
 

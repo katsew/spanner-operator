@@ -1,5 +1,9 @@
 package instance_config
 
+import (
+	"math/rand"
+	"time"
+)
 
 type InstanceConfig int
 
@@ -64,4 +68,12 @@ func FindByName(name string) InstanceConfig {
 		}
 	}
 	return InstanceConfig(0)
+}
+
+func GetRandomInstanceConfig() string {
+	min := 1
+	max := len(instanceConfigs) - 1
+	rand.Seed(time.Now().UnixNano())
+	i := rand.Intn((max - min) + min)
+	return instanceConfigs[i]
 }
