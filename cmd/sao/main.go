@@ -10,8 +10,6 @@ import (
 var instanceOperator instance.Operator
 var useMock bool
 var projectId string
-var instanceId string
-var instanceConfig string
 var serviceAccountPath string
 
 func main() {

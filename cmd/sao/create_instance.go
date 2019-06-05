@@ -14,7 +14,7 @@ var createInstanceCommand = cobra.Command{
 		if instanceConfig == "" {
 			panic("No instanceConfig provided")
 		}
-		displayName := cmd.Flags().StringP("display-name", "p", instanceId, "Display name for UI")
+		displayName := cmd.Flags().String("display-name", instanceId, "Display name for UI")
 		nodeCount := cmd.Flags().Int32P("node-count", "n", 1, "Number of nodes to allocate")
 		if err := instanceOperator.CreateInstance(*displayName, instanceId, instanceConfig, *nodeCount); err != nil {
 			panic(err)
