@@ -34,7 +34,12 @@ func (im *instanceMock) CreateInstance(displayName string, instanceId string, in
 
 func (im *instanceMock) GetInstance(instanceId string) (*instance.Instance, error) {
 	log.Print("Get instance...")
-	b, err := ioutil.ReadFile(fmt.Sprintf("%s/%s.json", im.dataPath, instanceId))
+	instanceName := fmt.Sprintf("%s/%s.json", im.dataPath, instanceId)
+	_, err := os.Stat(instanceName)
+	if os.IsNotExist(err) {
+		return nil, err
+	}
+	b, err := ioutil.ReadFile(instanceName)
 	if err != nil {
 		return nil, err
 	}

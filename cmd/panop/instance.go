@@ -35,4 +35,5 @@ func init()  {
 	instanceCommand.AddCommand(&createInstanceCommand)
 	instanceCommand.AddCommand(&deleteInstanceCommand)
 	instanceCommand.AddCommand(&scaleCommand)
+	instanceCommand.AddCommand(&getInstanceCommand)
 }
