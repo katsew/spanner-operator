@@ -67,7 +67,7 @@ func (b *builder) Build() Operator {
 }
 
 func (b *builder) BuildMock(dataPath string) *instanceMock {
-	err := os.MkdirAll(dataPath, 755)
+	err := os.MkdirAll(dataPath, 0755)
 	if err != nil {
 		log.Warn(err.Error())
 		log.Warnf("If you use mock client, you should create directory to dataPath: %s", dataPath)
