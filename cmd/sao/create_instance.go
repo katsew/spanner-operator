@@ -6,9 +6,17 @@ var createInstanceCommand = cobra.Command{
 	Use:   "create [instanceId] [instanceConfig]",
 	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		displayName := cmd.Flags().StringP("displayName", "p", args[0], "Display name for UI")
-		nodeCount := cmd.Flags().Int32P("nodeCount", "n", 1, "Number of nodes to allocate")
-		if err := instanceOperator.CreateInstance(*displayName, args[0], args[1], *nodeCount); err != nil {
+		instanceId := args[0]
+		instanceConfig := args[1]
+		if instanceId == "" {
+			panic("No instanceId provided")
+		}
+		if instanceConfig == "" {
+			panic("No instanceConfig provided")
+		}
+		displayName := cmd.Flags().StringP("display-name", "p", instanceId, "Display name for UI")
+		nodeCount := cmd.Flags().Int32P("node-count", "n", 1, "Number of nodes to allocate")
+		if err := instanceOperator.CreateInstance(*displayName, instanceId, instanceConfig, *nodeCount); err != nil {
 			panic(err)
 		}
 	},

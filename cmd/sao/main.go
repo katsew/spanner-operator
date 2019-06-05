@@ -4,6 +4,7 @@ import (
 	"github.com/katsew/spanner-operator/pkg/helper/gcloud"
 	"github.com/katsew/spanner-operator/pkg/operator/instance"
 	"github.com/spf13/cobra"
+	"log"
 )
 
 var instanceOperator instance.Operator
@@ -26,19 +27,12 @@ func main() {
 				panic("No projectId provided")
 			}
 
-			if instanceId == "" {
-				panic("No instanceId provided")
-			}
-
-			if instanceConfig == "" {
-				panic("No instanceConfig provided")
-			}
-
 			if serviceAccountPath != "" {
 				builder.ServiceAccountPath(serviceAccountPath)
 			}
 
 			if useMock {
+				log.Print("Using mock client to execute")
 				instanceOperator = builder.BuildMock("/tmp/spanner-instance-operator")
 			} else {
 				instanceOperator = builder.Build()
@@ -49,9 +43,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	io.PersistentFlags().BoolVar(&useMock, "useMock", false, "Use mock client")
-	io.PersistentFlags().StringVarP(&projectId, "projectId", "p", pid, "GCP project ID")
-	io.PersistentFlags().StringVarP(&serviceAccountPath, "serviceAccountPath", "s", "", "Path to GCP ServiceAccount")
+	io.PersistentFlags().BoolVar(&useMock, "use-mock", false, "Use mock client")
+	io.PersistentFlags().StringVarP(&projectId, "project-id", "p", pid, "GCP project ID")
+	io.PersistentFlags().StringVarP(&serviceAccountPath, "sa-path", "s", "", "Path to GCP ServiceAccount")
 	io.AddCommand(&instanceCommand)
 
 	if err := io.Execute(); err != nil {

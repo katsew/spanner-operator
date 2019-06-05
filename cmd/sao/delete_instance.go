@@ -6,7 +6,11 @@ var deleteInstanceCommand = cobra.Command{
 	Use:   "delete [instanceId]",
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := instanceOperator.DeleteInstance(args[0]); err != nil {
+		instanceId := args[0]
+		if instanceId == "" {
+			panic("No instanceId provided")
+		}
+		if err := instanceOperator.DeleteInstance(instanceId); err != nil {
 			panic(err)
 		}
 	},
