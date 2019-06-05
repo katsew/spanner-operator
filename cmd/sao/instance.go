@@ -9,4 +9,5 @@ var instanceCommand = cobra.Command{
 func init()  {
 	instanceCommand.AddCommand(&createInstanceCommand)
 	instanceCommand.AddCommand(&deleteInstanceCommand)
+	instanceCommand.AddCommand(&scaleCommand)
 }
