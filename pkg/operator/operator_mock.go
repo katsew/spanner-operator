@@ -33,7 +33,7 @@ func (om *operatorMock) CreateInstance(displayName string, instanceId string, in
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(fmt.Sprintf("%s/%s/instance_%s.json", om.dataDir, om.projectId, instanceId), b, 0755)
+	err = ioutil.WriteFile(fmt.Sprintf("%s/instance_%s.json", om.dataDir, instanceId), b, 0755)
 	return err
 }
 

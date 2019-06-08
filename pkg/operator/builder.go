@@ -111,12 +111,13 @@ func (b *builder) Build() Operator {
 func (b *builder) BuildMock(dataPath string) *operatorMock {
 	dataDir := fmt.Sprintf("%s/%s", dataPath, b.projectId)
 	err := os.MkdirAll(dataDir, 0755)
+	log.Printf("make directory to: %s", dataDir)
 	if err != nil {
-		log.Warn(err.Error())
-		log.Warnf("If you use mock client, you should create directory to dataDir: %s", dataDir)
+		log.Print(err.Error())
+		log.Printf("If you use mock client, you should create directory to dataDir: %s", dataDir)
 	}
 	return &operatorMock{
 		projectId: b.projectId,
-		dataDir:   dataPath,
+		dataDir:   dataDir,
 	}
 }
