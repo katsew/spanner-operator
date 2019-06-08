@@ -14,7 +14,7 @@ var op operator.Operator
 
 func main() {
 	var cli = &cobra.Command{
-		Use: "panop",
+		Use: "spnadm",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			builder := operator.NewBuilder()
 			if projectId != "" {
@@ -27,7 +27,7 @@ func main() {
 			}
 			if useMock {
 				log.Print("Using mock client to execute")
-				op = builder.BuildMock("/tmp/panop")
+				op = builder.BuildMock("/tmp/spnadm")
 			} else {
 				op = builder.Build()
 			}

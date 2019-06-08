@@ -1,0 +1,42 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: spannerinstances.instanceadmins.spanner-operator.io
+spec:
+  group: instanceadmins.spanner-operator.io
+  version: v1alpha1
+  names:
+    kind: SpannerInstance
+    plural: spannerinstances
+    shortNames:
+      - spi
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        metadata:
+          properties:
+            namespace:
+              type: string
+              pattern: 'operator'
+  subresources:
+    status: {}
+    scale:
+      # specReplicasPath defines the JSONPath inside of a custom resource that corresponds to Scale.Spec.Replicas.
+      specReplicasPath: .spec.nodeCount
+      # statusReplicasPath defines the JSONPath inside of a custom resource that corresponds to Scale.Status.Replicas.
+      statusReplicasPath: .status.availableNodes
+      # labelSelectorPath defines the JSONPath inside of a custom resource that corresponds to Scale.Status.Selector.
+      labelSelectorPath: .status.instanceLabels
+  additionalPrinterColumns:
+  - name: NodeCount
+    type: integer
+    description: The number of nodes launched by the SpannerInstance
+    JSONPath: .spec.nodeCount
+  - name: InstanceConfig
+    type: string
+    description: The config for the SpannerInstance
+    JSONPath: .spec.instanceConfig
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp

@@ -1,0 +1,14 @@
+---
+apiVersion: instanceadmins.spanner-operator.io/v1alpha1
+kind: SpannerInstance
+metadata:
+  name: testing
+  namespace: operator
+  labels:
+    app: spanner-operator
+    component: instance
+    env: testing
+spec:
+  displayName: testing
+  instanceConfig: regional-asia-northeast1
+  nodeCount: 1
