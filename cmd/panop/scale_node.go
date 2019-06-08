@@ -6,7 +6,7 @@ import (
 )
 
 var scaleCommand = cobra.Command{
-	Use:   "scale [instanceId] [nodeCount]",
+	Use:  "scale [instanceId] [nodeCount]",
 	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		instanceId := args[0]
@@ -17,7 +17,7 @@ var scaleCommand = cobra.Command{
 		if err != nil {
 			panic(err)
 		}
-		if err := instanceOperator.Scale(args[0], int32(nodeCount)); err != nil {
+		if err := op.Scale(args[0], int32(nodeCount)); err != nil {
 			panic(err)
 		}
 	},

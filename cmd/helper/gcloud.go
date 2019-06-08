@@ -1,16 +1,15 @@
-package gcloud
+package helper
 
 import (
 	"bufio"
 	"fmt"
-	ic "github.com/katsew/spanner-operator/pkg/config/instance_config"
 	"io"
 	"io/ioutil"
 	"os"
 	"strings"
 )
 
-func GetDefaults() (string, string, error) {
+func GetGCPDefaults() (string, string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", "", err
@@ -43,8 +42,8 @@ func GetDefaults() (string, string, error) {
 		}
 		if strings.HasPrefix(s, "region = ") {
 			instanceConfig = fmt.Sprintf("regional-%s", strings.Trim(s, "region = "))
-			if ic.FindByName(instanceConfig) == ic.Undefined {
-				instanceConfig = ""
+			if FindInstanceConfigByName(instanceConfig) == InstanceConfigUndefined {
+				instanceConfig = GetRandomInstanceConfig()
 			}
 		}
 	}

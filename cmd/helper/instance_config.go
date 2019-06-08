@@ -1,4 +1,4 @@
-package instance_config
+package helper
 
 import (
 	"math/rand"
@@ -8,28 +8,28 @@ import (
 type InstanceConfig int
 
 const (
-	Undefined InstanceConfig = iota
-	Eur3
-	NamEurAsia1
-	Nam3
-	Nam6
-	RegionalAsiaEast1
-	RegionalAsiaEast2
-	RegionalAsiaNortheast1
-	RegionalAsiaNortheast2
-	RegionalAsiaSouth1
-	RegionalAsiaSoutheast1
-	RegionalAustraliaSoutheast1
-	RegionalEuropeNorth1
-	RegionalEuropeWest1
-	RegionalEuropeWest2
-	RegionalEuropeWest4
-	RegionalEuropeWest6
-	RegionalNorthamericaNortheast1
-	RegionalUsCentral1
-	RegionalUsEast1
-	RegionalUsEast4
-	RegionalUsWast1
+	InstanceConfigUndefined InstanceConfig = iota
+	InstanceConfigEur3
+	InstanceConfigNamEurAsia1
+	InstanceConfigNam3
+	InstanceConfigNam6
+	InstanceConfigRegionalAsiaEast1
+	InstanceConfigRegionalAsiaEast2
+	InstanceConfigRegionalAsiaNortheast1
+	InstanceConfigRegionalAsiaNortheast2
+	InstanceConfigRegionalAsiaSouth1
+	InstanceConfigRegionalAsiaSoutheast1
+	InstanceConfigRegionalAustraliaSoutheast1
+	InstanceConfigRegionalEuropeNorth1
+	InstanceConfigRegionalEuropeWest1
+	InstanceConfigRegionalEuropeWest2
+	InstanceConfigRegionalEuropeWest4
+	InstanceConfigRegionalEuropeWest6
+	InstanceConfigRegionalNorthamericaNortheast1
+	InstanceConfigRegionalUsCentral1
+	InstanceConfigRegionalUsEast1
+	InstanceConfigRegionalUsEast4
+	InstanceConfigRegionalUsWast1
 )
 
 var instanceConfigs = [22]string{
@@ -61,7 +61,7 @@ func (s InstanceConfig) String() string {
 	return instanceConfigs[s]
 }
 
-func FindByName(name string) InstanceConfig {
+func FindInstanceConfigByName(name string) InstanceConfig {
 	for i, c := range instanceConfigs {
 		if c == name {
 			return InstanceConfig(i)
