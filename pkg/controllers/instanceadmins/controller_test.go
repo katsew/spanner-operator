@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package instanceadmins
 
 import (
 	"fmt"
@@ -67,7 +67,7 @@ func newFixture(t *testing.T) *fixture {
 	return f
 }
 
-func newSpannerInstance(name string, replicas *int32) *spannercontroller.SpannerInstance {
+func newSpannerInstance(name string, replicas int32) *spannercontroller.SpannerInstance {
 	return &spannercontroller.SpannerInstance{
 		TypeMeta: metav1.TypeMeta{APIVersion: spannercontroller.SchemeGroupVersion.String()},
 		ObjectMeta: metav1.ObjectMeta{
@@ -88,13 +88,13 @@ func (f *fixture) newController() (*Controller, informers.SharedInformerFactory,
 	i := informers.NewSharedInformerFactory(f.client, noResyncPeriodFunc())
 	k8sI := kubeinformers.NewSharedInformerFactory(f.kubeclient, noResyncPeriodFunc())
 
-	c := NewController(f.kubeclient, f.client, i.Spannercontroller().V1alpha1().SpannerInstances())
+	c := NewController(f.kubeclient, f.client, i.Instanceadmins().V1alpha1().SpannerInstances())
 
 	c.spannerInstancesSynced = alwaysReady
 	c.recorder = &record.FakeRecorder{}
 
 	for _, f := range f.SpannerInstanceLister {
-		i.Spannercontroller().V1alpha1().SpannerInstances().Informer().GetIndexer().Add(f)
+		i.Instanceadmins().V1alpha1().SpannerInstances().Informer().GetIndexer().Add(f)
 	}
 
 	for _, d := range f.deploymentLister {
@@ -248,7 +248,7 @@ func getKey(SpannerInstance *spannercontroller.SpannerInstance, t *testing.T) st
 
 func TestCreatesDeployment(t *testing.T) {
 	f := newFixture(t)
-	SpannerInstance := newSpannerInstance("test", int32Ptr(1))
+	SpannerInstance := newSpannerInstance("test", 1)
 
 	f.SpannerInstanceLister = append(f.SpannerInstanceLister, SpannerInstance)
 	f.objects = append(f.objects, SpannerInstance)
@@ -260,7 +260,7 @@ func TestCreatesDeployment(t *testing.T) {
 
 func TestDoNothing(t *testing.T) {
 	f := newFixture(t)
-	SpannerInstance := newSpannerInstance("test", int32Ptr(1))
+	SpannerInstance := newSpannerInstance("test", 1)
 
 	f.SpannerInstanceLister = append(f.SpannerInstanceLister, SpannerInstance)
 	f.objects = append(f.objects, SpannerInstance)
@@ -271,7 +271,7 @@ func TestDoNothing(t *testing.T) {
 
 func TestNotControlledByUs(t *testing.T) {
 	f := newFixture(t)
-	SpannerInstance := newSpannerInstance("test", int32Ptr(1))
+	SpannerInstance := newSpannerInstance("test", 1)
 
 	f.SpannerInstanceLister = append(f.SpannerInstanceLister, SpannerInstance)
 	f.objects = append(f.objects, SpannerInstance)

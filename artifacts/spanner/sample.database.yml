@@ -1,0 +1,12 @@
+---
+apiVersion: databaseadmins.spanner-operator.io/v1alpha1
+kind: SpannerDatabase
+metadata:
+  name: testdb
+  namespace: spanner
+  labels:
+    app: spanner-operator
+    component: database
+    env: testing
+spec:
+  instanceId: testing

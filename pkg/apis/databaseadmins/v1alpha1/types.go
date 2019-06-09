@@ -32,7 +32,7 @@ type SpannerDatabase struct {
 
 // SpannerInstanceSpec is the spec for a SpannerInstance resource
 type SpannerDatabaseSpec struct {
-	Name string `json:"name"`
+	InstanceId string `json:"instanceId"`
 }
 
 // SpannerDatabaseStatus is the status for a SpannerDatabase resource

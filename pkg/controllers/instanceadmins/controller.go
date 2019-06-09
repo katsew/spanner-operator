@@ -14,13 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package instanceadmins
 
 import (
-	"cloud.google.com/go/compute/metadata"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -81,13 +79,16 @@ type Controller struct {
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
 	recorder record.EventRecorder
+
+	operator operator.Operator
 }
 
 // NewController returns a new spanner controller
 func NewController(
 	kubeclientset kubernetes.Interface,
 	spannerclientset clientset.Interface,
-	spannerInstanceInformer informers.SpannerInstanceInformer) *Controller {
+	spannerInstanceInformer informers.SpannerInstanceInformer,
+	op operator.Operator) *Controller {
 
 	// Create event broadcaster
 	// Add spanner-controller types to the default Kubernetes Scheme so Events can be
@@ -106,6 +107,7 @@ func NewController(
 		spannerInstancesSynced: spannerInstanceInformer.Informer().HasSynced,
 		workqueue:              workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Spanners"),
 		recorder:               recorder,
+		operator:               op,
 	}
 
 	klog.Info("Setting up event handlers")
@@ -213,32 +215,6 @@ func (c *Controller) processNextWorkItem() bool {
 	return true
 }
 
-var op operator.Operator
-
-func init() {
-	b := operator.NewBuilder()
-	var projectId string
-	projectId, err := metadata.ProjectID()
-	if err != nil {
-		log.Print("No projectId got from metadata server, get it from environment variables")
-		projectId = os.Getenv("GCP_PROJECT_ID")
-	}
-	b.ProjectId(projectId)
-	serviceAccountPath := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
-	b.ServiceAccountPath(serviceAccountPath)
-	mockEnabled := os.Getenv("MOCK_ENABLED")
-	if mockEnabled != "true" {
-		op = b.Build()
-	} else {
-		dataPath := os.Getenv("MOCK_DATA_PATH")
-		if dataPath == "" {
-			dataPath = "/tmp/spanner-operator"
-		}
-		log.Printf("Mock client enabled, building mock with dataPath: %s", dataPath)
-		op = b.BuildMock(dataPath)
-	}
-}
-
 // syncHandler compares the actual state with the desired, and attempts to
 // converge the two. It then updates the Status block of the SpannerInstance resource
 // with the current status of the resource.
@@ -260,14 +236,14 @@ func (c *Controller) syncHandler(key string) error {
 		// processing.
 		if errors.IsNotFound(err) {
 			log.Printf("spannerInstance '%s' in work queue no longer exists", key)
-			_, err := op.GetInstance(name)
-			if err != nil && op.IsNotFoundError(err) {
+			_, err := c.operator.GetInstance(name)
+			if err != nil && c.operator.IsNotFoundError(err) {
 				utilruntime.HandleError(fmt.Errorf("spannerInstance '%s' in work queue no longer exists", key))
 				return nil
 			} else if err != nil {
 				return err
 			}
-			err = op.DeleteInstance(name)
+			err = c.operator.DeleteInstance(name)
 			if err != nil {
 				return err
 			}
@@ -278,20 +254,20 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	inst, err := op.GetInstance(name)
-	if err != nil && op.IsNotFoundError(err) {
+	inst, err := c.operator.GetInstance(name)
+	if err != nil && c.operator.IsNotFoundError(err) {
 		log.Printf("SpannerInstance does not exists on GCP, create new one with name: %s", spannerInstance.Name)
-		err = op.CreateInstance(spannerInstance.Spec.DisplayName, spannerInstance.Name, spannerInstance.Spec.InstanceConfig, spannerInstance.Spec.NodeCount)
+		err = c.operator.CreateInstance(spannerInstance.Spec.DisplayName, spannerInstance.Name, spannerInstance.Spec.InstanceConfig, spannerInstance.Spec.NodeCount)
 		if err != nil {
 			return err
 		}
 		if len(spannerInstance.Labels) > 0 {
-			err = op.UpdateLabels(name, spannerInstance.Labels)
+			err = c.operator.UpdateLabels(name, spannerInstance.Labels)
 			if err != nil {
 				return err
 			}
 		}
-		inst, err = op.GetInstance(name)
+		inst, err = c.operator.GetInstance(name)
 		if err != nil {
 			return err
 		}
@@ -301,7 +277,7 @@ func (c *Controller) syncHandler(key string) error {
 
 	if spannerInstance.Spec.NodeCount != inst.NodeCount {
 		log.Printf("spannerInstance nodeCount: %d is different from actual instance nodeCount: %d, fit to spannerInstance spec", spannerInstance.Spec.NodeCount, inst.NodeCount)
-		err = op.Scale(spannerInstance.Name, spannerInstance.Spec.NodeCount)
+		err = c.operator.Scale(spannerInstance.Name, spannerInstance.Spec.NodeCount)
 		if err != nil {
 			return nil
 		}
@@ -321,7 +297,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 	if dirty {
 		log.Printf("spec labels and actual labels is different, update labels to %+v", labels)
-		err = op.UpdateLabels(name, labels)
+		err = c.operator.UpdateLabels(name, labels)
 		if err != nil {
 			return err
 		}

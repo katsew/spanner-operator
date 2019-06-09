@@ -3,7 +3,7 @@ apiVersion: instanceadmins.spanner-operator.io/v1alpha1
 kind: SpannerInstance
 metadata:
   name: testing
-  namespace: operator
+  namespace: spanner
   labels:
     app: spanner-operator
     component: instance

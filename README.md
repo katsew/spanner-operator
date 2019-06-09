@@ -6,7 +6,6 @@ This is an experimental project of my own practice creating custom controller.
 
 # Plans
 
-- Implement databaseadmins controller
 - Implement custom metrics server
 
 # References

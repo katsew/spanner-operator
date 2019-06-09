@@ -18,7 +18,7 @@ spec:
           properties:
             namespace:
               type: string
-              pattern: 'operator'
+              pattern: 'spanner'
   subresources:
     status: {}
     scale:

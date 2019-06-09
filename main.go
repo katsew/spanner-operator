@@ -17,7 +17,14 @@ limitations under the License.
 package main
 
 import (
+	"cloud.google.com/go/compute/metadata"
+	"context"
 	"flag"
+	"github.com/katsew/spanner-operator/pkg/controllers/databaseadmins"
+	"github.com/katsew/spanner-operator/pkg/operator"
+	"log"
+	"os"
+	"sync"
 	"time"
 
 	kubeinformers "k8s.io/client-go/informers"
@@ -27,14 +34,20 @@ import (
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
-	clientset "github.com/katsew/spanner-operator/pkg/generated/instanceadmins/clientset/versioned"
-	informers "github.com/katsew/spanner-operator/pkg/generated/instanceadmins/informers/externalversions"
+	databaseadminsClientset "github.com/katsew/spanner-operator/pkg/generated/databaseadmins/clientset/versioned"
+	databaseadminsInformers "github.com/katsew/spanner-operator/pkg/generated/databaseadmins/informers/externalversions"
+	instanceadminsClientset "github.com/katsew/spanner-operator/pkg/generated/instanceadmins/clientset/versioned"
+	instanceadminsInformers "github.com/katsew/spanner-operator/pkg/generated/instanceadmins/informers/externalversions"
 	"github.com/katsew/spanner-operator/pkg/signals"
+
+	_ "github.com/katsew/spanner-operator/pkg/controllers/databaseadmins"
+	"github.com/katsew/spanner-operator/pkg/controllers/instanceadmins"
 )
 
 var (
 	masterURL  string
 	kubeconfig string
+	op         operator.Operator
 )
 
 func main() {
@@ -42,8 +55,10 @@ func main() {
 	//klog.InitFlags(nil)
 	flag.Parse()
 
+	ctx, cancelFunc := context.WithCancel(context.Background())
+
 	// set up signals so we handle the first shutdown signal gracefully
-	stopCh := signals.SetupSignalHandler()
+	signals.SetupSignalHandler(cancelFunc)
 
 	cfg, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
 	if err != nil {
@@ -55,28 +70,74 @@ func main() {
 		klog.Fatalf("Error building kubernetes clientset: %s", err.Error())
 	}
 
-	spannerController, err := clientset.NewForConfig(cfg)
+	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
+	instanceadminsCtrl, err := instanceadminsClientset.NewForConfig(cfg)
+	if err != nil {
+		klog.Fatalf("Error building example clientset: %s", err.Error())
+	}
+	databaseadminsCtrl, err := databaseadminsClientset.NewForConfig(cfg)
 	if err != nil {
 		klog.Fatalf("Error building example clientset: %s", err.Error())
 	}
 
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
-	spannerInformerFactory := informers.NewSharedInformerFactory(spannerController, time.Second*30)
+	var wg sync.WaitGroup
 
-	controller := NewController(kubeClient, spannerController,
-		spannerInformerFactory.Instanceadmins().V1alpha1().SpannerInstances())
+	instanceadminsInformerFactory := instanceadminsInformers.NewSharedInformerFactory(instanceadminsCtrl, time.Second*30)
+	instanceadminsController := instanceadmins.NewController(kubeClient, instanceadminsCtrl,
+		instanceadminsInformerFactory.Instanceadmins().V1alpha1().SpannerInstances(), op)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err = instanceadminsController.Run(2, ctx.Done()); err != nil {
+			klog.Fatalf("Error running controller: %s", err.Error())
+		}
+	}()
+	databaseadminsInformerFactory := databaseadminsInformers.NewSharedInformerFactory(databaseadminsCtrl, time.Second*30)
+	databaseadminsController := databaseadmins.NewController(kubeClient, databaseadminsCtrl,
+		databaseadminsInformerFactory.Databaseadmins().V1alpha1().SpannerDatabases(), op)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err = databaseadminsController.Run(2, ctx.Done()); err != nil {
+			klog.Fatalf("Error running controller: %s", err.Error())
+		}
+	}()
 
 	// notice that there is no need to run Start methods in a separate goroutine. (i.e. go kubeInformerFactory.Start(stopCh)
 	// Start method is non-blocking and runs all registered informers in a dedicated goroutine.
-	kubeInformerFactory.Start(stopCh)
-	spannerInformerFactory.Start(stopCh)
+	go kubeInformerFactory.Start(ctx.Done())
+	go instanceadminsInformerFactory.Start(ctx.Done())
+	go databaseadminsInformerFactory.Start(ctx.Done())
 
-	if err = controller.Run(2, stopCh); err != nil {
-		klog.Fatalf("Error running controller: %s", err.Error())
-	}
+	<-ctx.Done()
+
+	log.Print("Waiting for all controllers to shut down gracefully")
+	wg.Wait()
 }
 
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+
+	b := operator.NewBuilder()
+	var projectId string
+	projectId, err := metadata.ProjectID()
+	if err != nil {
+		log.Print("No projectId got from metadata server, get it from environment variables")
+		projectId = os.Getenv("GCP_PROJECT_ID")
+	}
+	b.ProjectId(projectId)
+	serviceAccountPath := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	b.ServiceAccountPath(serviceAccountPath)
+	mockEnabled := os.Getenv("MOCK_ENABLED")
+	if mockEnabled != "true" {
+		op = b.Build()
+	} else {
+		dataPath := os.Getenv("MOCK_DATA_PATH")
+		if dataPath == "" {
+			dataPath = "/tmp/spanner-operator"
+		}
+		log.Printf("Mock client enabled, building mock with dataPath: %s", dataPath)
+		op = b.BuildMock(dataPath)
+	}
 }
