@@ -77,3 +77,4 @@ fabric.properties
 /cmd/spnadm/spnadm
 /vendor
 /controller
+/spanner-operator
