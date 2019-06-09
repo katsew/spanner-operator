@@ -45,15 +45,49 @@ import (
 )
 
 var (
-	masterURL  string
-	kubeconfig string
-	op         operator.Operator
+	masterURL          string
+	kubeconfig         string
+	debuggable         bool
+	mockEnabled        bool
+	projectId          string
+	serviceAccountPath string
+	op                 operator.Operator
 )
 
 func main() {
 
-	//klog.InitFlags(nil)
 	flag.Parse()
+	log.Printf(`
+kubeconfig: %s
+masterURL: %s
+projectId: %s
+serviceAccountPath: %s
+mockEnabled: %v
+debuggable: %v
+`, kubeconfig, masterURL, projectId, serviceAccountPath, mockEnabled, debuggable)
+	if debuggable {
+		log.Print("Enable debugging!")
+		klog.InitFlags(nil)
+	}
+	b := operator.NewBuilder()
+	projectId, err := metadata.ProjectID()
+	if err != nil {
+		log.Print("No projectId got from metadata server, get it from environment variables")
+		projectId = os.Getenv("GCP_PROJECT_ID")
+	}
+	b.ProjectId(projectId)
+	serviceAccountPath = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	b.ServiceAccountPath(serviceAccountPath)
+	if !mockEnabled {
+		op = b.Build()
+	} else {
+		dataPath := os.Getenv("MOCK_DATA_PATH")
+		if dataPath == "" {
+			dataPath = "/tmp/spanner-operator"
+		}
+		log.Printf("Mock client enabled, building mock with dataPath: %s", dataPath)
+		op = b.BuildMock(dataPath)
+	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 
@@ -116,28 +150,10 @@ func main() {
 }
 
 func init() {
+
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+	flag.BoolVar(&debuggable, "debuggable", false, "Enable debug flag.")
+	flag.BoolVar(&mockEnabled, "use-mock", false, "Enable mock client.")
 
-	b := operator.NewBuilder()
-	var projectId string
-	projectId, err := metadata.ProjectID()
-	if err != nil {
-		log.Print("No projectId got from metadata server, get it from environment variables")
-		projectId = os.Getenv("GCP_PROJECT_ID")
-	}
-	b.ProjectId(projectId)
-	serviceAccountPath := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
-	b.ServiceAccountPath(serviceAccountPath)
-	mockEnabled := os.Getenv("MOCK_ENABLED")
-	if mockEnabled != "true" {
-		op = b.Build()
-	} else {
-		dataPath := os.Getenv("MOCK_DATA_PATH")
-		if dataPath == "" {
-			dataPath = "/tmp/spanner-operator"
-		}
-		log.Printf("Mock client enabled, building mock with dataPath: %s", dataPath)
-		op = b.BuildMock(dataPath)
-	}
 }
