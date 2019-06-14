@@ -117,6 +117,7 @@ func NewController(
 		UpdateFunc: func(old, new interface{}) {
 			controller.enqueueSpannerDatabase(new)
 		},
+		DeleteFunc: controller.enqueueSpannerDatabase,
 	})
 
 	return controller
