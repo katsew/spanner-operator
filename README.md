@@ -13,8 +13,7 @@ This is an experimental project of my own practice creating custom controller.
 ## Installation
 
 :zap: Notes  
-Currently only works on local development like minikube.  
-I haven't tested yet on GKE.
+Currently I've only tested on my local machine by using minikube.  
 
 ### Running controller
 
