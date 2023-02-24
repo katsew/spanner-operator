@@ -20,11 +20,9 @@ require (
 	github.com/valyala/fasttemplate v1.0.1 // indirect
 	go.opencensus.io v0.22.0 // indirect
 	golang.org/x/exp v0.0.0-20190510132918-efd6b22b2522 // indirect
-	golang.org/x/net v0.0.0-20190607181551-461777fb6f67 // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
-	golang.org/x/sys v0.0.0-20190608050228-5b15430b70e3 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
-	golang.org/x/tools v0.0.0-20190608022120-eacb66d2a7c3 // indirect
 	gonum.org/v1/gonum v0.0.0-20190608115022-c5f01565d866 // indirect
 	google.golang.org/api v0.6.0
 	google.golang.org/appengine v1.6.1 // indirect
